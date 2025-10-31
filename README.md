@@ -143,8 +143,6 @@ output "networks" {
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|----------|
 | subscription_id | The Azure subscription ID to collect data from | string | null | No* |
-| subscription_name_filter | Filter subscriptions by partial name match (case-insensitive) | string | null | No* |
-| use_current_subscription | Use the current subscription context | bool | false | No* |
 
 *At least one of these must be provided, or the module will use the current subscription context.
 

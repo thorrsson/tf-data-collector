@@ -38,35 +38,29 @@ export ARM_SUBSCRIPTION_ID="<subscription-id>"
 
 ## Usage
 
-You can specify the target subscription in three ways:
+### Quick Start with Shell Script (Recommended)
 
-### Option 1: By Subscription ID (Recommended)
+The easiest way to use this module is with the included `collect-data.sh` wrapper script:
 
-Create a `terraform.tfvars` file:
-```hcl
-subscription_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+```bash
+# Search by partial subscription name
+./collect-data.sh --name "Production"
+
+# Use exact subscription ID
+./collect-data.sh --id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Use current Azure CLI subscription
+./collect-data.sh
+
+# Get formatted table output
+./collect-data.sh --name "Production" --pretty-print
 ```
 
-### Option 2: By Partial Subscription Name
+### Direct Terraform Usage
 
-Search for a subscription by partial name match (case-insensitive):
-```hcl
-subscription_name_filter = "Production"
-# This will match subscriptions like "Production-East", "Prod-Production-Sub", etc.
-```
+If you prefer to use Terraform directly:
 
-**Note:** If multiple subscriptions match the filter, the first one will be used.
-
-### Option 3: Use Current Subscription Context
-
-Use the currently selected subscription:
-```hcl
-use_current_subscription = true
-```
-
-### Running the Module
-
-1. Initialize Terraform:
+1. Create a `terraform.tfvars` file:
 ```hcl
 subscription_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ```
@@ -76,32 +70,45 @@ subscription_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 terraform init
 ```
 
-3. Run the plan to see what data will be collected:
-```bash
-terraform plan
-```
-
-4. Apply the configuration to collect the data:
+3. Apply the configuration:
 ```bash
 terraform apply
 ```
 
-5. View specific outputs:
+4. View outputs:
 ```bash
-# View subscription name
-terraform output subscription_name
+terraform output                    # All outputs
+terraform output subscription_name  # Subscription name only
+terraform output resource_groups    # Resource groups only
+```
 
-# View all virtual networks
-terraform output virtual_networks
+## Shell Script Options
 
-# View NAT gateway IPs
-terraform output nat_gateway_ips
+The `collect-data.sh` script supports the following options:
 
-# View resource groups
-terraform output resource_groups
+```
+OPTIONS:
+    -n, --name PATTERN       Partial subscription name to search for (case-insensitive)
+    -i, --id SUBSCRIPTION_ID Exact subscription ID to use
+    -p, --pretty-print       Display results in formatted tables
+    -j, --json               Output only JSON (no other logging)
+    -h, --help              Show this help message
+```
 
-# View storage accounts
-terraform output storage_accounts
+### Examples
+
+```bash
+# Find subscription by partial name with formatted output
+./collect-data.sh --name "jpw" --pretty-print
+
+# Use specific subscription ID
+./collect-data.sh --id "83f3fbe9-ef57-45b8-921e-337672499d21"
+
+# Get clean JSON output for parsing
+./collect-data.sh --name "Production" --json
+
+# Use current subscription context
+./collect-data.sh
 ```
 
 ## Example
@@ -112,20 +119,6 @@ module "azure_data_collector" {
   source = "./tf-data-collector"
   
   subscription_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-}
-
-# Using as a module with subscription name filter
-module "azure_data_collector_by_name" {
-  source = "./tf-data-collector"
-  
-  subscription_name_filter = "Production"
-}
-
-# Using as a module with current subscription
-module "azure_data_collector_current" {
-  source = "./tf-data-collector"
-  
-  use_current_subscription = true
 }
 
 # Access outputs
@@ -142,9 +135,7 @@ output "networks" {
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|----------|
-| subscription_id | The Azure subscription ID to collect data from | string | null | No* |
-
-*At least one of these must be provided, or the module will use the current subscription context.
+| subscription_id | The Azure subscription ID to collect data from | string | n/a | Yes |
 
 ## Outputs
 
@@ -160,8 +151,8 @@ output "networks" {
 ## Notes
 
 - This module only performs read operations and does not create or modify any resources
-- When using `subscription_name_filter`, the search is case-insensitive and matches partial names
-- If multiple subscriptions match the name filter, the first match will be used
+- Use the `collect-data.sh` script for easy subscription lookup by partial name
+- The `--pretty-print` option provides formatted table output for easy reading
 - Resource groups are discovered based on the resources found (VNets, Storage Accounts, NAT Gateways)
 - Execution time may vary depending on the number of resources in the subscription
 - Some resources may not be visible if you lack appropriate permissions
